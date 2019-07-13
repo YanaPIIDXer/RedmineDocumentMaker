@@ -3,8 +3,9 @@ class MainController < ApplicationController
   before_filter :find_project
   
   def index
+    
   end
-
+  
 private
 
   def find_project
