@@ -13,7 +13,7 @@ module MakepdfHelper
 
             @pdf.SetTitle("#{@project.name} ドキュメント")
             @pdf.set_margins(15, 27, 15)
-
+            
             makeTitlePage()
         end
 
@@ -31,10 +31,10 @@ private
             # 枠
             @pdf.SetFillColor(255, 255, 255)
             @pdf.SetDrawColor(0, 0, 0)
-            width = @pdf.GetPageWidth() - 20
-            height = @pdf.GetPageHeight() - 20
+            width = @pdf.getPageWidth() - 20
+            height = @pdf.getPageHeight() - 20
             @pdf.rect(10, 10, width, height, 'DF')
-        
+
             # 表題
             @pdf.SetFontSize(64)
             
@@ -45,7 +45,7 @@ private
             y += @pdf.getFontSize()
             writeText(x, y, "ドキュメント")
         end
-        
+
         # 文字列書き込み
         # x: X座標
         # y: Y座標
