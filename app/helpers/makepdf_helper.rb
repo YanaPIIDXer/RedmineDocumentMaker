@@ -15,14 +15,6 @@ module MakepdfHelper
             @pdf.set_margins(15, 27, 15)        
         end
 
-        def generate
-            makeTitlePage()
-            
-            return @pdf.output()
-        end
-        
-    private
-
         # 表題ページ作成
         def makeTitlePage
             @pdf.AddPage('L' 'A10')
@@ -44,7 +36,14 @@ module MakepdfHelper
             y += @pdf.getFontSize()
             writeText(x, y, "ドキュメント")
         end
-
+        
+        # 生成
+        def generate           
+            return @pdf.output()
+        end
+        
+private
+        
         # 文字列書き込み
         # x: X座標
         # y: Y座標

@@ -4,6 +4,10 @@ class MakepdfController < ApplicationController
   
   def make
     maker = MakepdfHelper::PDFMaker.new(@project)
+
+    # 各種ページの生成
+    maker.makeTitlePage()
+    
     send_data(maker.generate(), :type => "application/pdf", :filename => 'document.pdf')
   end
 
