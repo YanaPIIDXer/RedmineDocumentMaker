@@ -1,5 +1,66 @@
 module MakepdfHelper
 
+    # ガントチャート用オブジェクト
+    # マイルストーン、タスクを表す。
+    class GanttObject
+        attr_reader :name, :startDate, :endDate, :isMilestone
+
+        # コンストラクタ
+        def initialize(name, startDate, endDate, isMilestone)
+            @name = name
+            @startDate = startDate
+            @endDate = endDate
+            @isMilestone = isMilestone
+        end
+        
+        # 生成
+        # project: プロジェクト
+        # returns: オブジェクト配列
+        def self.generate(project)
+            objects = []
+            
+            milestones = Version.where("project_id = ?", project.id).order("effective_date, created_on")
+            if milestones.count == 0
+                # マイルストーンが無い場合は機能をそのまま列挙。
+                functions = Issue.where("project_id = ? and parent_id is null", project.id) 
+                appendFunctions(functions, objects)
+                return objects
+            end
+
+            milestones.each do |milestone|
+                # マイルストーンを追加。
+                #obj = GanttObject.new(milestone.name, milestone.start_date, milestone.due_date, true)
+                # ↑実はmilestone.due_dateには値が入っていない。
+
+                # マイルストーンの機能を列挙。
+                functions = Issue.where("project_id = ? and fixed_version_id = ? and parent_id is null", project.id, milestone.id)
+
+                # 終了日を出す。
+                endDate = functions.maximum("due_date")
+
+                # データを追加する。
+                obj = GanttObject.new(milestone.name, milestone.start_date, endDate, true)
+                objects.push(obj)
+                appendFunctions(functions, objects)
+            end
+
+            return objects
+        end
+
+private
+
+        # 機能を列挙
+        # functions: 機能リスト
+        # outObjects: 配列
+        def self.appendFunctions(functions, outObjects)
+            functions.each do |function|
+                obj = GanttObject.new(function.subject, function.start_date, function.due_date, false)
+                outObjects.push(obj)
+            end
+        end
+
+    end
+
     # PDF作成クラス
     # PDFの作り方・・・と言うか、PDFクラスについての情報は以下を参照。
     # https://github.com/naitoh/rbpdf/
@@ -22,7 +83,7 @@ module MakepdfHelper
             makeNewPage()
 
             # 表題
-            writeText(@pdf.getPageWidth / 2, 10, "実装機能", 32)
+            writeText(@pdf.getPageWidth() / 2, 10, "実装機能", 32)
 
             x = 50
             y = 30
@@ -45,6 +106,98 @@ module MakepdfHelper
 
                 functions = Issue.where("project_id = ? and fixed_version_id = ? and parent_id is null", @project.id, milestone.id)
                 y = writeFunctions(functions, x + 20, y, 20)
+            end
+        end
+
+        # ガントチャートページ生成
+        def makeGanttChartPage
+            startDate = @project.start_date
+            endDate = @project.due_date
+
+            # 開始日 or 終了日が決まっていない場合は生成しない。
+            if !startDate || !endDate
+                return
+            end
+
+            makeNewPage()
+
+            # 表題
+            writeText(@pdf.getPageWidth() / 2, 10, "作業予定", 32)
+            
+            # ガントチャート
+            dayCount = (((endDate - startDate).day / 86400) + 1).to_i   
+            cellSize = (@pdf.getPageWidth() - 40 - 60) / dayCount
+
+            # 月日表示
+            y = 30
+            currentMonth = startDate.month
+            endMonth = endDate.month
+            monthCount = endMonth - currentMonth + 1
+            x = 80
+            currentDay = startDate.day
+            year = startDate.year
+            currentMonth.step(endMonth, 1){|month|
+                endDay = Date.new(year, month, -1).day
+                if month == endMonth
+                    endDay = endDate.day
+                end
+                
+                @pdf.SetFillColor(255, 255, 255)
+                @pdf.SetDrawColor(0, 0, 0)
+                
+                # 月
+                size = cellSize * (endDay - currentDay + 1)
+                @pdf.rect(x, y, size, cellSize, 'DF')
+                writeText(x + (size / 2), y + (cellSize / 2) - 3, "#{month}", 10, false)
+
+                # 日
+                i = 0
+                currentDay.step(endDay, 1){|day|
+                    setWeekColor(Date.new(year, month, day))
+                    @pdf.rect(x + (i * cellSize), y + cellSize, cellSize, cellSize, 'DF')
+                    writeText(x + (i * cellSize) + 3, y + cellSize + (cellSize / 2) - 3, "#{day}", 10, false)
+                    i = i + 1
+                }
+
+                x += size
+                currentDay = 1
+                if month == 12
+                    year = year + 1
+                end
+            }
+
+            y += cellSize * 2
+
+            # 作業日
+            ganttObjs = GanttObject.generate(@project)
+            ganttObjs.each do |obj|
+                # タスク名
+                @pdf.SetFillColor(255, 255, 255)
+                @pdf.SetDrawColor(0, 0, 0)
+                @pdf.rect(20, y, 60, cellSize, 'DF')
+                writeText(40, y + (cellSize / 2) - 3, obj.name, 10, false)
+
+                date = startDate
+                
+                # 作業予定日
+                dayCount.times do |i|
+                    # 色付け
+                    if date >= obj.startDate && date <= obj.endDate
+                        if obj.isMilestone
+                            @pdf.SetFillColor(0, 255, 255)
+                        else
+                            @pdf.SetFillColor(0, 0, 255)
+                        end
+                    else
+                        setWeekColor(date)
+                    end
+                    
+                    @pdf.rect(80 + (cellSize * i), y, cellSize, cellSize, 'DF')
+
+                    date += 1
+                end
+                
+                y += cellSize
             end
         end
         
@@ -113,6 +266,21 @@ private
             
             @pdf.SetXY(x, y)
             @pdf.write(5, text, '')
+        end
+
+        # 曜日の色をセット
+        # date: 日付
+        def setWeekColor(date)
+            if date.sunday?
+                # 日曜日
+                @pdf.SetFillColor(255, 0, 0)
+            elsif date.saturday?
+                # 土曜日
+                @pdf.SetFillColor(0, 0, 255)
+            else
+                # 平日
+                @pdf.SetFillColor(255, 255, 255) 
+            end
         end
 
     end
