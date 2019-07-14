@@ -109,6 +109,34 @@ private
             end
         end
 
+        # 条件掲示ページ生成
+        # desiredReward: 希望報酬額
+        def makeConditionNoticePage(desiredReward)
+            makeNewPage()
+
+            # 表題
+            writeText(@pdf.getPageWidth() / 2, 10, "条件掲示", 32)
+
+            y = 50
+            
+            # 作業開始日
+            startDate = @project.start_date
+            if startDate
+                writeText(80, y, "作業開始日：#{startDate.strftime("%Y年%-m月%-d日")}", 27, false)
+                y += 30
+            end
+
+            # 作業完了日
+            endDate = @project.due_date
+            if endDate
+                writeText(80, y, "作業終了日：#{endDate.strftime("%Y年%-m月%-d日")}", 27, false)       
+                y += 30
+            end
+
+            # 希望報酬額
+            writeText(80, y, "希望報酬額：￥#{desiredReward.to_i.to_s(:delimited)}円", 27, false)
+        end
+
         # ガントチャートページ生成
         def makeGanttChartPage
             startDate = @project.start_date

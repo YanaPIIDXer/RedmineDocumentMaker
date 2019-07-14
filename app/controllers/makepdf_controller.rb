@@ -5,9 +5,15 @@ class MakepdfController < ApplicationController
   def make
     maker = MakepdfHelper::PDFMaker.new(@project)
 
+    desiredReward = params[:desiredReward]
+    if !desiredReward
+      desiredReward = 0
+    end
+    
     # 各種ページの生成
-    maker.makeMilestonePage()   # マイルストーン
-    maker.makeGanttChartPage()  # ガントチャート
+    maker.makeMilestonePage()                      # マイルストーン
+    maker.makeConditionNoticePage(desiredReward)   # 条件掲示
+    maker.makeGanttChartPage()                     # ガントチャート
 
     send_data(maker.generate(), :type => "application/pdf", :filename => 'document.pdf')
   end
