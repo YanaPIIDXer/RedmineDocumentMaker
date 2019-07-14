@@ -19,7 +19,7 @@ module MakepdfHelper
 
         # マイルストーンページ生成
         def makeMilestonePage
-            @pdf.AddPage('L', 'A4')
+            makeNewPage()
 
             # 表題
             writeText(@pdf.getPageWidth / 2, 10, "実装機能", 32)
@@ -60,7 +60,7 @@ private
             # ↓ページと枠生成の処理を別メソッドに抽出したいんだけど、
             #  そのリファクタリングを行うだけで処理がイカれる。
             #  （しかも、色々弄ってる内にAddPageの引数決め打ちでもイカれ始めると言う謎挙動。）
-            @pdf.AddPage('L' 'A10')
+            makeNewPage()
 
             # 枠
             @pdf.SetFillColor(255, 255, 255)
@@ -76,6 +76,12 @@ private
 
             y += @pdf.getFontSize()
             writeText(x, y, "ドキュメント", 64)
+        end
+
+        # 新規ページ生成
+        # @pdf.AddPageを直接叩くのではなく、このメソッドを経由する事。
+        def makeNewPage
+            @pdf.AddPage('L' 'A10')
         end
 
         # 機能を書き出す
