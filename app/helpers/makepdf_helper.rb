@@ -12,8 +12,17 @@ module MakepdfHelper
             @project = project
 
             @pdf.SetTitle("#{@project.name} ドキュメント")
-            @pdf.set_margins(15, 27, 15)        
+            @pdf.set_margins(15, 27, 15)
+
+            makeTitlePage()
         end
+
+        # 生成
+        def generate           
+            return @pdf.output()
+        end
+        
+private
 
         # 表題ページ作成
         def makeTitlePage
@@ -36,13 +45,6 @@ module MakepdfHelper
             y += @pdf.getFontSize()
             writeText(x, y, "ドキュメント")
         end
-        
-        # 生成
-        def generate           
-            return @pdf.output()
-        end
-        
-private
         
         # 文字列書き込み
         # x: X座標
