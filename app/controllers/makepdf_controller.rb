@@ -1,19 +1,18 @@
 class MakepdfController < ApplicationController
   unloadable
-
-  attr_accessor :project
-
+  before_filter :find_project
+  
   def make
-    # PDFの作り方・・・と言うか、PDFクラスについての情報は以下を参照。
-    # https://github.com/naitoh/rbpdf/
-    
-    pdf = ::Redmine::Export::PDF::ITCPDF::new(current_language)
-    pdf.SetTitle("#{project}_document")
-    pdf.set_margins(15, 27, 15)
-    pdf.add_page()
-    pdf.write(5, params[:headText], '')
+    maker = MakepdfHelper::PDFMaker.new(@project)
+    send_data(maker.generate(), :type => "application/pdf", :filename => 'document.pdf')
+  end
 
-    send_data(pdf.output(), :filename => 'document.pdf')
+private
+
+  def find_project
+    @project = Project.find(params[:project_id])
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
 
 end

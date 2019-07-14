@@ -2,7 +2,7 @@
 <hr />
 
 <%= form_tag "make" do %>
-    <%= text_area_tag :headText %>
+    <%= hidden_field_tag :project_id, @project.id %>
     <br />
     <%= submit_tag "生成" %>
 <% end %>
