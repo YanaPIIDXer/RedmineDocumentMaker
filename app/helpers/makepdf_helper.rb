@@ -200,7 +200,11 @@ private
             ganttObjs = GanttObject.generate(@project)
             ganttObjs.each do |obj|
                 # タスク名
-                @pdf.SetFillColor(255, 255, 255)
+                if obj.isMilestone
+                    @pdf.SetFillColor(0, 128, 128)
+                else
+                    @pdf.SetFillColor(255, 255, 255)
+                end
                 @pdf.SetDrawColor(0, 0, 0)
                 @pdf.rect(20, y, 60, cellSize, 'DF')
                 writeText(40, y + (cellSize / 2) - 3, obj.name, 10, false)
@@ -253,7 +257,7 @@ private
             writeText(x, y, "#{@project.name}", 64)
 
             y += @pdf.getFontSize()
-            writeText(x, y, "ドキュメント", 64)
+            writeText(x, y, "契約要求", 64)
         end
 
         # 新規ページ生成
