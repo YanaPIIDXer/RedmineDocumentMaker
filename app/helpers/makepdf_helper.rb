@@ -216,9 +216,9 @@ private
                     # 色付け
                     if date >= obj.startDate && date <= obj.endDate
                         if obj.isMilestone
-                            @pdf.SetFillColor(0, 255, 255)
+                            @pdf.SetFillColor(0, 128, 128)
                         else
-                            @pdf.SetFillColor(0, 0, 255)
+                            @pdf.SetFillColor(128, 255, 255)
                         end
                     else
                         setWeekColor(date)
